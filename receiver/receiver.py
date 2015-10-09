@@ -2,6 +2,7 @@ from socket import *
 import pdb
 import sys
 import select
+import random 
 
 def rdt_rcv(port, mss):
     client_socket = socket(AF_INET,SOCK_DGRAM)
@@ -20,7 +21,9 @@ def rdt_rcv(port, mss):
         while(data):
             cs = checksum(data[0:32] + data[48:64] + data[64:])
             cs = '{0:016b}'.format(cs)
-            if(cs == data[32:48]) & (data[48:64] == '0101010101010101'):
+            p = random.uniform(0, 1)
+            r = 0.2
+            if(cs == data[32:48]) & (data[48:64] == '0101010101010101') & (p > r):
                 # ack
                 if(seq_num == int(data[0:32], 2)):
                     # ack header
@@ -49,7 +52,7 @@ def checksum(msg):
         w = ord(msg[i]) + (ord(msg[i+1]) << 8)
         s = carry_around_add(s, w)
     return ~s & 0xffff
-        
+
 if __name__ == '__main__':
     port = 16003;
     rdt_rcv(port, 1024)
