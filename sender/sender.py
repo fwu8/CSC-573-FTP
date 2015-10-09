@@ -2,21 +2,23 @@ from socket import *
 import pdb
 import time
 
-def rdt_send(address, port, file_name, mss):
+def rdt_send(port, mss):
     # sender send msg to receiver
     server_socket = socket(AF_INET,SOCK_DGRAM)
+    server_socket.bind(('',port))
     
-    # send title
-    server_socket.sendto(file_name, (address, port))
-    ack,addr = server_socket.recvfrom(mss)
-    while(ack != "title ack"):
-        server_socket.sendto(file_name, (address, port))
-        ack,addr = server_socket.recvfrom(mss)
+    # get request and ack, shake hands
+    file_name,addr = server_socket.recvfrom(mss)
+    server_socket.sendto("connection ack", addr)
     
     # send content
     seq_num = 0
-    f = open(file_name, "rb")
+    try:
+        f = open(file_name, "rb")
+    except:
+        return
     data = f.read(mss)
+    pdb.set_trace
     while(data):
         # add header
         header_seq = '{0:032b}'.format(seq_num)# add seq number
@@ -26,7 +28,7 @@ def rdt_send(address, port, file_name, mss):
         header = header_seq + header_checksum + header_type
         data = header + data
         # send message
-        server_socket.sendto(data,(address, port))
+        server_socket.sendto(data, addr)
         # get ack
         try:
             ack,addr = server_socket.recvfrom(64)
@@ -35,6 +37,8 @@ def rdt_send(address, port, file_name, mss):
             print "retransmit"
             data = data[64:]
             continue
+        
+
         if(data[0:32] == ack[0:32]) & (ack[48:64] == '1010101010101010'):
             # print seq_num
             data = f.read(mss)
@@ -57,6 +61,5 @@ def checksum(msg):
     return ~s & 0xffff
     
 if __name__ == '__main__':
-    address = "localhost"
-    port = 16003
-    rdt_send(address, port, "Lecture 3.pdf", 1024)
+    port = 12000
+    rdt_send(port, 1024)

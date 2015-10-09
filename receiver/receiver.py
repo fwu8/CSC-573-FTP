@@ -4,14 +4,24 @@ import sys
 import select
 import random 
 
-def rdt_rcv(port, mss):
+def rdt_rcv(address, port, file_name, mss):
     client_socket = socket(AF_INET,SOCK_DGRAM)
-    client_socket.bind(('',port))
-    data,address = client_socket.recvfrom(mss)# receive file_name from server
-    client_socket.sendto("title ack",address)# ack to file_name
-    
-    print "Received File:",data.strip()
-    f = open(data.strip(),"wb")# open file
+
+    # ask server for file, shake hands
+    client_socket.sendto(file_name, (address, port))
+    client_socket.settimeout(3)
+    try:
+        ack,addr = client_socket.recvfrom(mss)
+        while(ack != "connection ack"):
+            client_socket.sendto(file_name, (address, port))
+            ack,addr = client_socket.recvfrom(mss)
+            client_socket.settimeout(3)
+    except timeout:
+        return
+
+    # open file and start receive
+    print "Received File:",file_name
+    f = open(file_name,"wb")# open file
     
     # start receive data
     seq_num = 0
@@ -54,5 +64,6 @@ def checksum(msg):
     return ~s & 0xffff
 
 if __name__ == '__main__':
-    port = 16003;
-    rdt_rcv(port, 1024)
+    address = "localhost"
+    port = 12000
+    rdt_rcv(address, port, "Lecture 3.pdf", 1024)
