@@ -31,9 +31,7 @@ def rdt_rcv(address, port, file_name, mss):
         while(data):
             cs = checksum(data[0:32] + data[48:64] + data[64:])
             cs = '{0:016b}'.format(cs)
-            p = random.uniform(0, 1)
-            r = 0.2
-            if(cs == data[32:48]) & (data[48:64] == '0101010101010101') & (p > r):
+            if(cs == data[32:48]) & (data[48:64] == '0101010101010101') & discard():
                 # ack
                 if(seq_num == int(data[0:32], 2)):
                     # ack header
@@ -62,6 +60,14 @@ def checksum(msg):
         w = ord(msg[i]) + (ord(msg[i+1]) << 8)
         s = carry_around_add(s, w)
     return ~s & 0xffff
+
+def discard():
+    p = random.uniform(0, 1)
+    r = 0.1
+    if(p > r):
+        return True
+    else:
+        return False
 
 if __name__ == '__main__':
     address = "localhost"
