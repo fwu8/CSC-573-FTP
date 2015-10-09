@@ -20,7 +20,7 @@ def rdt_rcv(port, mss):
         while(data):
             cs = checksum(data[0:32] + data[48:64] + data[64:])
             cs = '{0:016b}'.format(cs)
-            if(cs == data[32:48]):
+            if(cs == data[32:48]) & (data[48:64] == '0101010101010101'):
                 # ack
                 if(seq_num == int(data[0:32], 2)):
                     # ack header
@@ -29,7 +29,7 @@ def rdt_rcv(port, mss):
                     header_checksum = '0000000000000000'
                     header_type = '1010101010101010' # ack
                     head = header_seq + header_checksum + header_type
-                    print seq_num
+                    # print seq_num
                     client_socket.sendto(head, address)
                     seq_num = seq_num + mss
             client_socket.settimeout(3)

@@ -32,13 +32,15 @@ def rdt_send(address, port, file_name, mss):
             ack,addr = server_socket.recvfrom(64)
             server_socket.settimeout(0.1) # if timeout, need retransmit packet
         except timeout:
+            print "retransmit"
             data = data[64:]
             continue
-        if(data[0:32] == ack[0:32]):
-            print seq_num
+        if(data[0:32] == ack[0:32]) & (ack[48:64] == '1010101010101010'):
+            # print seq_num
             data = f.read(mss)
             seq_num = seq_num + mss
         else:
+            print "retransmit"
             data = data[64:]
     server_socket.close
     f.close
