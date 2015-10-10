@@ -18,37 +18,43 @@ def rdt_rcv(address, port, file_name, mss):
             client_socket.settimeout(3)
     except timeout:
         return
-
     # open file and start receive
     print "Received File:",file_name
     f = open(file_name,"wb")# open file
     
     # start receive data
     seq_num = 0
-    data,address = client_socket.recvfrom(mss+64)
-    client_socket.settimeout(3)
-    try:
-        while(data):
-            cs = checksum(data[0:32] + data[48:64] + data[64:])
-            cs = '{0:016b}'.format(cs)
-            if(cs == data[32:48]) & (data[48:64] == '0101010101010101') & discard():
-                # ack
-                if(seq_num == int(data[0:32], 2)):
-                    # ack header
-                    f.write(data[64:])
-                    header_seq = data[0:32]
-                    header_checksum = '0000000000000000'
-                    header_type = '1010101010101010' # ack
-                    head = header_seq + header_checksum + header_type
-                    # print seq_num
-                    client_socket.sendto(head, address)
-                    seq_num = seq_num + mss
-            client_socket.settimeout(3)
-            data,address = client_socket.recvfrom(mss+64)
-    except timeout:
-        f.close()
-        client_socket.close()
-        print "File Downloaded"
+    data,address = client_socket.recvfrom(mss+1024)
+    while(data):
+        if(data == "over"):
+            f.close()
+            client_socket.close()
+            print "File Downloaded"
+            break;
+        cs = checksum(data[0:32] + data[48:64] + data[64:])
+        cs = '{0:016b}'.format(cs)
+        if(cs == data[32:48]) & (data[48:64] == '0101010101010101') & discard():
+            # ack
+            if(seq_num == int(data[0:32], 2)):
+                # ack header
+                f.write(data[64:])
+                header_seq = data[0:32]
+                header_checksum = '0000000000000000'
+                header_type = '1010101010101010' # ack
+                head = header_seq + header_checksum + header_type
+                # print seq_num
+                client_socket.sendto(head, address)
+                seq_num = seq_num + mss
+                print seq_num
+            else:
+                header_seq = '{0:032b}'.format(seq_num-mss)
+                header_checksum = '0000000000000000'
+                header_type = '1010101010101010' # ack
+                head = header_seq + header_checksum + header_type
+                # print seq_num
+                client_socket.sendto(head, address)
+        data,address = client_socket.recvfrom(mss+1024)
+        
 
 def carry_around_add(a, b):
     c = a + b
@@ -63,7 +69,7 @@ def checksum(msg):
 
 def discard():
     p = random.uniform(0, 1)
-    r = 0.1
+    r = 0.01
     if(p > r):
         return True
     else:
@@ -71,5 +77,5 @@ def discard():
 
 if __name__ == '__main__':
     address = "localhost"
-    port = 12000
-    rdt_rcv(address, port, "Lecture 3.pdf", 1024)
+    port = 12003
+    rdt_rcv(address, port, "Lecture 2.pdf", 1024)
