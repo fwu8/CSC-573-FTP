@@ -43,14 +43,13 @@ def rdt_rcv(address, port, file_name, mss):
                 header_checksum = '0000000000000000'
                 header_type = '1010101010101010' # ack
                 head = header_seq + header_checksum + header_type
-                # print seq_num
                 print "ack:", int(header_seq,2)
                 client_socket.sendto(head, address)
                 seq_num = seq_num + mss
             else:
                 header_seq = '{0:032b}'.format(seq_num-mss)
                 header_checksum = '0000000000000000'
-                header_type = '1010101010101010' # ack
+                header_type = '1010101010101010' # re-ack
                 print "re-ack:", int(header_seq,2)
                 head = header_seq + header_checksum + header_type
                 # print seq_num
@@ -58,7 +57,6 @@ def rdt_rcv(address, port, file_name, mss):
         else:
             print "lost"
         data,address = client_socket.recvfrom(mss+1024)
-        
 
 def carry_around_add(a, b):
     c = a + b
@@ -73,7 +71,7 @@ def checksum(msg):
 
 def discard():
     p = random.uniform(0, 1)
-    r = 0.1
+    r = 0.2
     if(p > r):
         return True
     else:
@@ -82,4 +80,4 @@ def discard():
 if __name__ == '__main__':
     address = "localhost"
     port = 12003
-    rdt_rcv(address, port, "Lecture 2.pdf", 1024)
+    rdt_rcv(address, port, "Lecture 3.pdf", 1024)

@@ -26,11 +26,11 @@ def rdt_send(port, mss):
     except:
         return
     data = f.read(mss)
-    while(data):
-        if(len(cwd) < cwd_size):
+    while(data) or (len(cwd) != 0):
+        if(len(cwd) < cwd_size) and (data):
             # add header
             header_seq = '{0:032b}'.format(seq_num)# add seq number
-            header_type = '0101010101010101'# indicate data packet
+            header_type = '0101010101010101'# data
             header_checksum = checksum(header_seq + header_type + data)
             header_checksum = '{0:016b}'.format(header_checksum)
             header = header_seq + header_checksum + header_type
@@ -57,7 +57,7 @@ def rdt_send(port, mss):
         if(cwd[0][0:32] == ack[0:32]) & (ack[48:64] == '1010101010101010'):
             cwd.remove(cwd[0])
             time_wd.remove(time_wd[0])
-        
+    # close connection
     data = "over"
     server_socket.sendto(data, addr)
     server_socket.close
