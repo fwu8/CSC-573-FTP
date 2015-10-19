@@ -4,6 +4,7 @@ import sys
 import select
 import random
 import time
+import os
 
 ACK_TYPE = '1010101010101010'
 DATA_TYPR = '0101010101010101'
@@ -18,10 +19,10 @@ def rdt_rcv(address, port, file_name, mss):
     print "Receiving File:",file_name
     f = open(file_name,"wb")
     seq_num = 0
-    data,address = client_socket.recvfrom(mss+1024)
     client_socket.settimeout(1)
     try:
-        while(data):
+        while True:
+            data,address = client_socket.recvfrom(mss+1024)
             if(data == "finish"):
                 f.close()
                 client_socket.close()
@@ -51,11 +52,14 @@ def rdt_rcv(address, port, file_name, mss):
                     client_socket.sendto(head, address)
             else:
                 print "lost"
-            data,address = client_socket.recvfrom(mss+1024)
     except timeout:
         f.close()
+        if(os.stat(file_name).st_size == 0):
+            print "File Downloaded Failed"
+        else:
+            print "File Downloaded"
         client_socket.close()
-        print "File Downloaded"
+        
 
 def rdt_send(port, mss):
     server_socket = socket(AF_INET,SOCK_DGRAM)
