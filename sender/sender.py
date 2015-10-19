@@ -1,7 +1,8 @@
 from socket import *
 import pdb
 import time
-
+import FTP as ftp
+'''
 ACK_TYPE = '1010101010101010'
 DATA_TYPR = '0101010101010101'
 
@@ -79,7 +80,7 @@ def checksum(msg):
         w = ord(msg[i]) + (ord(msg[i+1]) << 8)
         s = carry_around_add(s, w)
     return ~s & 0xffff
-    
+'''
 if __name__ == '__main__':
     port = 12003
-    rdt_send(port, 1024)
+    ftp.rdt_send(port, 1024)
