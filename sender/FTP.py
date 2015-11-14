@@ -19,7 +19,7 @@ def rdt_rcv(address, port, file_name, mss):
     print "Receiving File:",file_name
     f = open(file_name,"wb")
     seq_num = 0
-    client_socket.settimeout(1)
+    client_socket.settimeout(5)
     try:
         while True:
             data,address = client_socket.recvfrom(mss+1024)
@@ -27,11 +27,11 @@ def rdt_rcv(address, port, file_name, mss):
                 f.close()
                 client_socket.close()
                 print "File Downloaded"
-                break;
+                break
             print "receive:", int(data[0:32], 2)
             cs = checksum(data[0:32] + data[48:64] + data[64:])
             cs = '{0:016b}'.format(cs)
-            if(cs == data[32:48]) & (data[48:64] == DATA_TYPR) & lost_packet():
+            if(cs == data[32:48]) & (data[48:64] == DATA_TYPR):
                 # ack
                 if(seq_num == int(data[0:32], 2)):
                     # ack header
@@ -41,7 +41,8 @@ def rdt_rcv(address, port, file_name, mss):
                     header_type = ACK_TYPE
                     head = header_seq + header_checksum + header_type
                     print "ack:", int(header_seq,2)
-                    client_socket.sendto(head, address)
+                    #client_socket.sendto(head, address)
+                    transmit(client_socket,head,address)
                     seq_num = seq_num + mss
                 else:
                     header_seq = '{0:032b}'.format(seq_num-mss)
@@ -49,7 +50,8 @@ def rdt_rcv(address, port, file_name, mss):
                     header_type = ACK_TYPE # re-ack
                     print "re-ack:", int(header_seq,2)
                     head = header_seq + header_checksum + header_type
-                    client_socket.sendto(head, address)
+                    #client_socket.sendto(head, address)
+                    transmit(client_socket,head,address)
             else:
                 print "lost"
     except timeout:
@@ -92,7 +94,8 @@ def rdt_send(port, mss):
             header = header_seq + header_checksum + header_type
             data = header + data
             # send message
-            server_socket.sendto(data, addr)
+            #server_socket.sendto(data, addr)
+            transmit(server_socket,data,addr)
             time_wd.append(time.time())
             cwd.append(data)
             seq_num = seq_num + mss
@@ -110,21 +113,29 @@ def rdt_send(port, mss):
             continue
         try:
             print "receive ack:", int(ack[0:32], 2),"expect:", int(cwd[0][0:32], 2)
-            if(cwd[0][0:32] == ack[0:32]) & (ack[48:64] == ACK_TYPE):
-                cwd.remove(cwd[0])
-                time_wd.remove(time_wd[0])
+            if(ack[48:64] == ACK_TYPE):
+                while(cwd[0][0:32] <= ack[0:32]):
+                    cwd.remove(cwd[0])
+                    time_wd.remove(time_wd[0])
         except:
             continue
     # close connection
     data = "finish"
-    server_socket.sendto(data, addr)
+    print "Finish transfer!"
+    #server_socket.sendto(data, addr)
+    transmit(server_socket,data,addr)
     server_socket.close
     f.close
+
+def transmit(udp_socket,data,addr):
+    if(not lost_packet()):
+        udp_socket.sendto(data, addr)
 
 def retransmit(cwd, addr, server_socket):
     time_wd = []
     for data in cwd:
-        server_socket.sendto(data, addr)
+        #server_socket.sendto(data, addr)
+        transmit(server_socket,data,addr)
         time_wd.append(time.time())
     return time_wd
 
@@ -141,7 +152,7 @@ def checksum(msg):
 
 def lost_packet():
     p = random.uniform(0, 1)
-    r = 0.1
+    r = 0.9
     if(p > r):
         return True
     else:

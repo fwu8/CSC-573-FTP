@@ -7,7 +7,7 @@ import FTP as ftp
 
 if __name__ == '__main__':
     address = "localhost"
-    port = 12005
+    port = 7778
     try:
         ftp.rdt_rcv(address, port, "Lecture 3.pdf", 1024)
     except:
