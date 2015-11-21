@@ -9,8 +9,9 @@ import os
 ACK_TYPE = '1010101010101010'
 DATA_TYPR = '0101010101010101'
 
-def rdt_rcv(address, port, file_name, mss):
+def rdt_rcv(address, port, file_name, mss, myport):
     client_socket = socket(AF_INET,SOCK_DGRAM)
+    client_socket.bind(('',myport))
 
     # ask server for file
     client_socket.sendto(file_name, (address, port))
@@ -114,7 +115,7 @@ def rdt_send(port, mss):
         try:
             print "receive ack:", int(ack[0:32], 2),"expect:", int(cwd[0][0:32], 2)
             if(ack[48:64] == ACK_TYPE):
-                while(cwd[0][0:32] <= ack[0:32]):
+                while(len(cwd) > 0 and cwd[0][0:32] <= ack[0:32]):
                     cwd.remove(cwd[0])
                     time_wd.remove(time_wd[0])
         except:
@@ -122,7 +123,6 @@ def rdt_send(port, mss):
     # close connection
     data = "finish"
     print "Finish transfer!"
-    #server_socket.sendto(data, addr)
     transmit(server_socket,data,addr)
     server_socket.close
     f.close
@@ -134,7 +134,6 @@ def transmit(udp_socket,data,addr):
 def retransmit(cwd, addr, server_socket):
     time_wd = []
     for data in cwd:
-        #server_socket.sendto(data, addr)
         transmit(server_socket,data,addr)
         time_wd.append(time.time())
     return time_wd
@@ -145,7 +144,7 @@ def carry_around_add(a, b):
 
 def checksum(msg):
     s = 0
-    for i in range(0, len(msg), 2):
+    for i in range(0, len(msg)-(len(msg)%2), 2):
         w = ord(msg[i]) + (ord(msg[i+1]) << 8)
         s = carry_around_add(s, w)
     return ~s & 0xffff
